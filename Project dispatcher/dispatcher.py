@@ -1,27 +1,48 @@
 import time
 import threading
 import re
+import subprocess
+import docker
 
 
-def run_command(container_index, container_job):
+def run_command(container_index, request, job_index):
     global free
     free[container_index] = False
-    time.sleep(1)
-    print(f'job assigned to container {container_index}')
+    print(f'[+] job {request} assigned to container {container_index}')
+    command = ['docker', 'exec', '-it', container_ids[container_index]]
+    command += ['python', 'main.py', request[0].strip(), request[1].strip(), request[2].strip()]
+    proc = subprocess.run(command, shell=True,
+                          capture_output=True, text=True)
+    if proc.stderr:
+        print(f'[+] Error: {proc.stderr}')
+    request_jobs[job_index] -= 1
+    if request_jobs[job_index] == 0:
+        print(f'[+] request number {job_index} finished')
+
     free[container_index] = True
+    if request[0].strip().endswith('.py'):
+        proc2 = subprocess.run(['echo', 'y', '|', 'docker', 'volume', 'prune'], shell=True, capture_output=True, text=True)
+        print(f'[+] container cleaned')
 
 
 def dispatcher():
+    time.sleep(4)
+    global job_counter
     while not finished:
         if len(jobs) > 0:
-            for i in range(3):
-                if free[i] and len(jobs) > 0:
-                    threading.Thread(target=run_command, args=(i, jobs.pop(0))).start()
-        time.sleep(0.5)
+            if not jobs[0][0]:
+                jobs.pop(0)
+
+            if len(jobs) > 0:
+                requests = jobs[0][0]
+                for i in range(3):
+                    if free[i] and len(requests) > 0:
+                        threading.Thread(target=run_command, args=(i, requests.pop(0), jobs[0][1])).start()
+        time.sleep(1)
 
 
 def run_cli():
-    global finished
+    global finished, job_counter
     try:
         threading.Thread(target=dispatcher).start()
     except Exception as e:
@@ -32,7 +53,9 @@ def run_cli():
     print('[+] Dispatcher is running')
     print('[+] Please enter your command or enter exit to finish')
     user_input = input()
+    user_input = user_input.strip()
     while user_input != 'e':
+        request = []
         if re.search("{(<.*>)+}", user_input) is None:
             print("Bad Request")
             return
@@ -41,17 +64,23 @@ def run_cli():
         for i in mod_input[:-1]:
             i = i[1:-1].split(",")
 
-            jobs.append(i.copy() + [output_part])
+            request.append(i.copy() + [output_part])
+        jobs.append([request, job_counter])
+        request_jobs[job_counter] = len(request)
+        job_counter += 1
 
         user_input = input()
+    print(job_counter)
     finished = True
     print(jobs)
 
 
 # global variables
-container_ids = ['a2d636520ea4', 'c0c0b0ac1bd2', 'db3c7b983dc1']
+container_ids = ['compute-server3', 'compute-server2', 'compute-server1']
 free = [True, True, True]
+request_jobs = {}
 job_counter = 0
 jobs = []
 finished = False
+client = docker.from_env()
 run_cli()

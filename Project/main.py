@@ -74,15 +74,41 @@ def compile_python_file(inp):
         print(e)
         return ['time out expired']
 
+def compile_python_subprocess(inp):
+    os.makedirs(os.path.dirname(f'{inp[-1]}/{inp[0][:-3]}.txt'), exist_ok=True)
+    print(f'{inp[-1]}/{inp[0][:-3]}.txt')
+    # sys.stdout = open(f'{inp[-1]}/{inp[0][:-3]}.txt', "w")
+    # proc = subprocess.run(['python'] + inp[:-1] + [ f'{inp[-1]}/{inp[0][:-3]}.txt'], shell=True, timeout=5)
+    string_command = ' '.join(inp[:-1])
+    output_file = f'{inp[-1]}/{inp[0][:-3]}.txt'
+    proc = os.system(f'python {string_command} > {output_file}')
+    
+    print(f'sudo python {string_command} > test.txt')
+    
+    # print(proc.stdout)
+    # if proc.returncode != 0:
+    #     return
+    # print(proc.stdout)
+    return ['done']
+
 def compile_cpp_file(inp):
-    program_name = inp[0][:-4]
-    program_name = program_name.replace('\\', '')
-    program_name = program_name.replace('.', '')
-    proc = subprocess.run(['gcc', '-o', program_name, inp[0], '-lstdc++', ';', f'./{program_name}'] + inp[1:-1], shell=True, capture_output=True, text=True)
-    print(['gcc', '-o', program_name, inp[0], '-lstdc++', ';', f'./{program_name}'] + inp[1:-1])
-    if proc.returncode != 0:
-        return
-    return [proc.stdout]
+    # program_name = inp[0][:-4]
+    # program_name = program_name.replace('\\', '')
+    # program_name = program_name.replace('.', '')
+    # proc = subprocess.run(['gcc', '-o', program_name, inp[0], '-lstdc++', ';', f'./{program_name}'] + inp[1:-1], shell=True, capture_output=True, text=True)
+    # print(['gcc', '-o', program_name, inp[0], '-lstdc++', ';', f'./{program_name}'] + inp[1:-1])
+    # if proc.returncode != 0:
+    #     return
+    # return [proc.stdout]
+    os.makedirs(os.path.dirname(f'{inp[-1]}/{inp[0][:-4]}.txt'), exist_ok=True)
+    
+    os.system(f'g++ {inp[0]} -o {inp[0][:-4]}')
+    
+    os.system(f'./{inp[0][:-4]} > {inp[-1]}/{inp[0][:-4]}.txt')
+    
+    print(f'./{inp[0][:-4]} > {inp[-1]}/{inp[0][:-4]}.txt')
+    
+    print('cpp done')
             
 def write_output(file_path, result):
     print(file_path)
@@ -127,14 +153,22 @@ try:
         write_output(f'./{output_path}/{desired_func}.txt', result)
     
     elif desired_func.endswith(".py"):
-        result = compile_python_file(inputs)
-        desired_func = desired_func[:-3]
-        output_path = inputs[-1]
+        # # result = compile_python_file(inputs)
+        # desired_func = desired_func[:-3]
+        # output_path = inputs[-1]
+        
+        result = compile_python_subprocess(inputs)
+        
+        # print(output_path, desired_func)
+        # write_output(f'./{output_path}/{desired_func}.txt', result)
     elif desired_func.endswith('.cpp'):
-        result = compile_cpp_file(inputs)
-        desired_func = desired_func[:-4]
-        output_path = inputs[-1]
+        # result = compile_cpp_file(inputs)
+        # desired_func = desired_func[:-4]
+        # output_path = inputs[-1]
 
+        result = compile_cpp_file(inputs)
+    
+    
     # if desired_func in ('min', 'max', 'sort', 'wordcount', 'average'):
         # write_output(f'./{output_path}/{desired_func}.txt', result)
     

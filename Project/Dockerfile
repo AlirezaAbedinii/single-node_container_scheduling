@@ -2,7 +2,7 @@ FROM python:alpine
 RUN mkdir /server
 WORKDIR /server
 
-RUN apk add build-base
+RUN apk add --no-cache g++
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 

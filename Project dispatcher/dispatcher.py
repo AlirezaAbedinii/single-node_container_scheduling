@@ -3,13 +3,14 @@ import threading
 import re
 import subprocess
 import docker
-
+import os
 
 def run_command(container_index, request, job_index):
     global free
     free[container_index] = False
     print(f'[+] job {request} assigned to container {container_index}')
     command = ['docker', 'exec', '-it', container_ids[container_index]]
+    print(f'request is {request}')
     command += ['python', 'main.py', request[0].strip(), request[1].strip(), request[2].strip()]
     proc = subprocess.run(command, shell=True,
                           capture_output=True, text=True)
@@ -19,11 +20,15 @@ def run_command(container_index, request, job_index):
     if request_jobs[job_index] == 0:
         print(f'[+] request number {job_index} finished')
 
-    free[container_index] = True
     if request[0].strip().endswith('.py'):
         proc2 = subprocess.run(['echo', 'y', '|', 'docker', 'volume', 'prune'], shell=True, capture_output=True, text=True)
         print(f'[+] container cleaned')
-
+    if request[0].strip().endswith('.cpp'):
+        compiled_name = request[0].strip()[:-4]
+        # print(f'compiled is {compiled_name}')
+        os.system(f'docker exec {container_ids[container_index]} rm {compiled_name}')
+        # proc2 = subprocess.run(['docker', 'exec', container_ids[container_index], 'rm', f'{}'])
+    free[container_index] = True
 
 def dispatcher():
     time.sleep(4)

@@ -1,0 +1,2 @@
+umad
+./out/min.txt

@@ -1,0 +1,5 @@
+umad
+name 'file_path' is not defined
+bad input
+umad
+./out/min.txt
